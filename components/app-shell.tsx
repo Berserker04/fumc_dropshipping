@@ -6,7 +6,8 @@ import {
   LayoutDashboard,
   LogOut,
   PackageSearch,
-  Truck
+  Truck,
+  Users
 } from "lucide-react";
 import { logoutAction } from "@/app/actions";
 import { getSession } from "@/lib/auth";
@@ -17,6 +18,7 @@ const navByRole: Record<AppRole, { href: string; label: string; icon: React.Reac
   ADMINISTRADOR: [
     { href: "/dashboard", label: "Panel", icon: <LayoutDashboard size={18} /> },
     { href: "/catalogo", label: "Catalogo", icon: <PackageSearch size={18} /> },
+    { href: "/admin/usuarios", label: "Usuarios", icon: <Users size={18} /> },
     { href: "/admin/productos", label: "Inventario", icon: <Boxes size={18} /> },
     { href: "/bodega/despachos", label: "Despachos", icon: <Truck size={18} /> },
     { href: "/vendedor/pedidos", label: "Pedidos", icon: <ClipboardList size={18} /> },

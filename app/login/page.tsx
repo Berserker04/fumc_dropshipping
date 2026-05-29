@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { loginAction } from "@/app/actions";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,12 @@ export default async function LoginPage({
             Entrar al sistema
           </Button>
         </form>
+        <p className="mt-4 border-t border-line pt-4 text-sm text-slate-600">
+          No tienes cuenta?{" "}
+          <Link className="font-semibold text-ocean hover:text-ink" href="/registro">
+            Registrate aqui
+          </Link>
+        </p>
       </Card>
     </div>
   );

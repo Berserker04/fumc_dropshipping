@@ -1,87 +1,54 @@
-import { BarChart3, Boxes, CircleDollarSign, RotateCcw } from "lucide-react";
+import {
+  AlertTriangle,
+  BarChart3,
+  Boxes,
+  CircleDollarSign,
+  RefreshCw,
+  RotateCcw
+} from "lucide-react";
 import { EstadoPedido, RolUsuario } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { formatMoney, statusLabel } from "@/lib/format";
 import { Badge, statusTone } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, Td, Th } from "@/components/ui/table";
 
 export const dynamic = "force-dynamic";
 
+const DATABASE_CONNECTION_ERROR_CODES = new Set(["P1001", "P1002", "P1008", "P1017"]);
+
 export default async function ReportesPage() {
   await requireRole([RolUsuario.ADMINISTRADOR]);
 
-  const [
+  const data = await getReportesData().catch((error) => {
+    if (isDatabaseConnectionError(error)) return null;
+    throw error;
+  });
+
+  if (!data) {
+    return (
+      <div className="space-y-6">
+        <ReportesHeader />
+        <DatabaseUnavailableCard />
+      </div>
+    );
+  }
+
+  const {
     pedidosPorEstado,
     ventas,
     liquidaciones,
-    productos,
+    productosMap,
+    stockCritico,
+    tasaDevolucion,
     topProductos
-  ] = await Promise.all([
-    db.pedido.groupBy({
-      by: ["estado"],
-      _count: { _all: true },
-      orderBy: { estado: "asc" }
-    }),
-    db.pedido.aggregate({
-      _sum: { totalBruto: true, costoLogistico: true },
-      where: { estado: { not: EstadoPedido.CANCELADO } }
-    }),
-    db.liquidacion.aggregate({
-      _sum: { ganancia: true },
-      _count: { _all: true }
-    }),
-    db.producto.findMany({
-      select: {
-        id: true,
-        sku: true,
-        nombre: true,
-        categoria: true,
-        stockActual: true,
-        stockMinimo: true
-      },
-      orderBy: { stockActual: "asc" }
-    }),
-    db.lineaPedido.groupBy({
-      by: ["productoId"],
-      _sum: { cantidad: true, subtotal: true },
-      orderBy: { _sum: { cantidad: "desc" } },
-      take: 5
-    })
-  ]);
-
-  const productosMap = new Map(
-    productos.map((producto) => [producto.id, producto])
-  );
-  const stockCritico = productos.filter(
-    (producto) => producto.stockActual <= producto.stockMinimo
-  );
-  const devoluciones =
-    pedidosPorEstado.find((item) => item.estado === EstadoPedido.DEVUELTO)?._count
-      ._all ?? 0;
-  const entregados =
-    pedidosPorEstado.find((item) => item.estado === EstadoPedido.ENTREGADO)?._count
-      ._all ?? 0;
-  const tasaDevolucion =
-    entregados + devoluciones === 0
-      ? 0
-      : Math.round((devoluciones / (entregados + devoluciones)) * 100);
+  } = data;
 
   return (
     <div className="space-y-6">
-      <section className="space-y-2">
-        <p className="text-sm font-semibold uppercase tracking-wide text-mint">
-          Reportes
-        </p>
-        <h1 className="text-3xl font-semibold tracking-normal text-ink">
-          Indicadores ejecutivos
-        </h1>
-        <p className="max-w-3xl text-slate-600">
-          Vista inicial para ventas, inventario, despacho y liquidaciones.
-          La informacion se actualiza con los registros del sistema.
-        </p>
-      </section>
+      <ReportesHeader />
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -227,5 +194,137 @@ export default async function ReportesPage() {
         </Table>
       </Card>
     </div>
+  );
+}
+
+async function getReportesData() {
+  const [
+    pedidosPorEstado,
+    ventas,
+    liquidaciones,
+    productos,
+    topProductos
+  ] = await withDatabaseRetry(() => Promise.all([
+    db.pedido.groupBy({
+      by: ["estado"],
+      _count: { _all: true },
+      orderBy: { estado: "asc" }
+    }),
+    db.pedido.aggregate({
+      _sum: { totalBruto: true, costoLogistico: true },
+      where: { estado: { not: EstadoPedido.CANCELADO } }
+    }),
+    db.liquidacion.aggregate({
+      _sum: { ganancia: true },
+      _count: { _all: true }
+    }),
+    db.producto.findMany({
+      select: {
+        id: true,
+        sku: true,
+        nombre: true,
+        categoria: true,
+        stockActual: true,
+        stockMinimo: true
+      },
+      orderBy: { stockActual: "asc" }
+    }),
+    db.lineaPedido.groupBy({
+      by: ["productoId"],
+      _sum: { cantidad: true, subtotal: true },
+      orderBy: { _sum: { cantidad: "desc" } },
+      take: 5
+    })
+  ]));
+
+  const productosMap = new Map(
+    productos.map((producto) => [producto.id, producto])
+  );
+  const stockCritico = productos.filter(
+    (producto) => producto.stockActual <= producto.stockMinimo
+  );
+  const devoluciones =
+    pedidosPorEstado.find((item) => item.estado === EstadoPedido.DEVUELTO)?._count
+      ._all ?? 0;
+  const entregados =
+    pedidosPorEstado.find((item) => item.estado === EstadoPedido.ENTREGADO)?._count
+      ._all ?? 0;
+  const tasaDevolucion =
+    entregados + devoluciones === 0
+      ? 0
+      : Math.round((devoluciones / (entregados + devoluciones)) * 100);
+
+  return {
+    pedidosPorEstado,
+    ventas,
+    liquidaciones,
+    productosMap,
+    stockCritico,
+    tasaDevolucion,
+    topProductos
+  };
+}
+
+async function withDatabaseRetry<T>(operation: () => Promise<T>) {
+  try {
+    return await operation();
+  } catch (error) {
+    if (!isDatabaseConnectionError(error)) throw error;
+
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    return operation();
+  }
+}
+
+function isDatabaseConnectionError(error: unknown) {
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? (error as { code?: unknown }).code
+      : null;
+
+  return typeof code === "string" && DATABASE_CONNECTION_ERROR_CODES.has(code);
+}
+
+function ReportesHeader() {
+  return (
+    <section className="space-y-2">
+      <p className="text-sm font-semibold uppercase tracking-wide text-mint">
+        Reportes
+      </p>
+      <h1 className="text-3xl font-semibold tracking-normal text-ink">
+        Indicadores ejecutivos
+      </h1>
+      <p className="max-w-3xl text-slate-600">
+        Vista inicial para ventas, inventario, despacho y liquidaciones.
+        La informacion se actualiza con los registros del sistema.
+      </p>
+    </section>
+  );
+}
+
+function DatabaseUnavailableCard() {
+  return (
+    <Card className="border-red-200 bg-red-50">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex gap-3">
+          <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-md bg-red-100 text-red-700">
+            <AlertTriangle size={20} />
+          </span>
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold tracking-normal text-ink">
+              No se pudo conectar con la base de datos
+            </h2>
+            <p className="max-w-2xl text-sm text-slate-600">
+              Los indicadores no estan disponibles por el momento. Revisa la
+              conexion de MySQL configurada en DATABASE_URL y vuelve a intentar.
+            </p>
+          </div>
+        </div>
+        <ButtonLink href="/reportes" variant="secondary" className="w-full sm:w-auto">
+          <RefreshCw size={16} />
+          Reintentar
+        </ButtonLink>
+      </div>
+    </Card>
   );
 }

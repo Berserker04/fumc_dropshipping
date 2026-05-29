@@ -6,6 +6,97 @@ export const loginSchema = z.object({
   password: z.string().min(6)
 });
 
+const publicRegisterRoles = ["ADMINISTRADOR", "CLIENTE_FINAL"] as const;
+const managedUserRoles = ["OPERADOR_BODEGA", "VENDEDOR_EXTERNO"] as const;
+
+const optionalText = z.string().trim().optional();
+
+export const registerSchema = z
+  .object({
+    nombre: z.string().trim().min(3),
+    email: z.string().trim().email(),
+    password: z.string().min(6),
+    confirmPassword: z.string().min(6),
+    rol: z.enum(publicRegisterRoles),
+    nombreEmpresa: optionalText,
+    telefono: optionalText,
+    ciudad: optionalText,
+    direccion: optionalText,
+    datosBancarios: optionalText
+  })
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Las contrasenas no coinciden.",
+        path: ["confirmPassword"]
+      });
+    }
+
+    const requireField = (
+      field: "nombreEmpresa" | "telefono" | "ciudad" | "direccion" | "datosBancarios",
+      message: string
+    ) => {
+      if (!data[field] || data[field].trim().length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message,
+          path: [field]
+        });
+      }
+    };
+
+    if (data.rol === "CLIENTE_FINAL") {
+      requireField("telefono", "Ingresa el telefono del cliente.");
+      requireField("ciudad", "Ingresa la ciudad del cliente.");
+      requireField("direccion", "Ingresa la direccion del cliente.");
+    }
+  });
+
+export const adminUserSchema = z
+  .object({
+    nombre: z.string().trim().min(3),
+    email: z.string().trim().email(),
+    password: z.string().min(6),
+    confirmPassword: z.string().min(6),
+    rol: z.enum(managedUserRoles),
+    nombreEmpresa: optionalText,
+    telefono: optionalText,
+    ciudad: optionalText,
+    direccion: optionalText,
+    datosBancarios: optionalText
+  })
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Las contrasenas no coinciden.",
+        path: ["confirmPassword"]
+      });
+    }
+
+    const requireField = (
+      field: "nombreEmpresa" | "telefono" | "ciudad" | "direccion" | "datosBancarios",
+      message: string
+    ) => {
+      if (!data[field] || data[field].trim().length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message,
+          path: [field]
+        });
+      }
+    };
+
+    if (data.rol === "VENDEDOR_EXTERNO") {
+      requireField("nombreEmpresa", "Ingresa la empresa del vendedor.");
+      requireField("telefono", "Ingresa el telefono del vendedor.");
+      requireField("ciudad", "Ingresa la ciudad del vendedor.");
+      requireField("direccion", "Ingresa la direccion del vendedor.");
+      requireField("datosBancarios", "Ingresa los datos bancarios del vendedor.");
+    }
+  });
+
 export const providerSchema = z.object({
   razonSocial: z.string().min(3),
   nit: z.string().min(5),

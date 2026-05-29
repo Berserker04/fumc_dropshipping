@@ -11,9 +11,10 @@ export const dynamic = "force-dynamic";
 
 export default async function SeguimientoClientePage() {
   const session = await requireRole([RolUsuario.CLIENTE_FINAL]);
+  const email = session.email.toLowerCase();
   const clientes = await db.cliente.findMany({
     where: {
-      OR: [{ userId: session.id }, { email: session.email }]
+      OR: [{ userId: session.id }, { email }]
     },
     select: { id: true }
   });

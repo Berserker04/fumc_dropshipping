@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import {
   CanalNotificacion,
@@ -21,11 +22,13 @@ import {
   setSessionCookie
 } from "@/lib/auth";
 import {
+  adminUserSchema,
   dispatchSchema,
   loginSchema,
   orderSchema,
   productSchema,
   providerSchema,
+  registerSchema,
   stockAdjustmentSchema
 } from "@/lib/domain/schemas";
 import { applyStockMutation, hasAvailableStock } from "@/lib/domain/inventory";
@@ -67,6 +70,111 @@ export async function loginAction(formData: FormData) {
 
   await setSessionCookie(token);
   redirect("/dashboard");
+}
+
+export async function registerAction(formData: FormData) {
+  const parsed = registerSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) fail("/registro", "Revisa los datos del registro.");
+
+  const email = parsed.data.email.toLowerCase();
+  const rol = parsed.data.rol as RolUsuario;
+  const existingUser = await db.usuario.findUnique({ where: { email } });
+  if (existingUser) fail("/registro", "Ya existe un usuario con ese correo.");
+
+  const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+
+  const user = await db.$transaction(async (tx) => {
+    const createdUser = await tx.usuario.create({
+      data: {
+        nombre: parsed.data.nombre,
+        email,
+        passwordHash,
+        rol
+      }
+    });
+
+    if (rol === RolUsuario.CLIENTE_FINAL) {
+      const existingClient = await tx.cliente.findFirst({
+        where: { email, userId: null },
+        orderBy: { creadoEn: "asc" }
+      });
+
+      if (existingClient) {
+        await tx.cliente.update({
+          where: { id: existingClient.id },
+          data: {
+            userId: createdUser.id,
+            nombre: parsed.data.nombre,
+            telefono: parsed.data.telefono ?? existingClient.telefono,
+            ciudad: parsed.data.ciudad ?? existingClient.ciudad,
+            direccion: parsed.data.direccion ?? existingClient.direccion
+          }
+        });
+      } else {
+        await tx.cliente.create({
+          data: {
+            userId: createdUser.id,
+            nombre: parsed.data.nombre,
+            email,
+            telefono: parsed.data.telefono ?? "",
+            ciudad: parsed.data.ciudad ?? "",
+            direccion: parsed.data.direccion ?? ""
+          }
+        });
+      }
+    }
+
+    return createdUser;
+  });
+
+  const token = await createSessionToken({
+    id: user.id,
+    nombre: user.nombre,
+    email: user.email,
+    rol: user.rol
+  });
+
+  await setSessionCookie(token);
+  redirect(rol === RolUsuario.CLIENTE_FINAL ? "/cliente/seguimiento" : "/dashboard");
+}
+
+export async function createManagedUserAction(formData: FormData) {
+  await requireRole([RolUsuario.ADMINISTRADOR]);
+  const parsed = adminUserSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) fail("/admin/usuarios", "Revisa los datos del usuario.");
+
+  const email = parsed.data.email.toLowerCase();
+  const existingUser = await db.usuario.findUnique({ where: { email } });
+  if (existingUser) fail("/admin/usuarios", "Ya existe un usuario con ese correo.");
+
+  await db.$transaction(async (tx) => {
+    const user = await tx.usuario.create({
+      data: {
+        nombre: parsed.data.nombre,
+        email,
+        passwordHash: await bcrypt.hash(parsed.data.password, 12),
+        rol: parsed.data.rol as RolUsuario
+      }
+    });
+
+    if (parsed.data.rol === RolUsuario.VENDEDOR_EXTERNO) {
+      await tx.vendedorExterno.create({
+        data: {
+          userId: user.id,
+          nombreEmpresa: parsed.data.nombreEmpresa ?? parsed.data.nombre,
+          ciudad: parsed.data.ciudad ?? "",
+          direccion: parsed.data.direccion ?? "",
+          telefono: parsed.data.telefono ?? "",
+          datosBancarios: parsed.data.datosBancarios ?? "",
+          tokenIntegracion: `vnd_${randomUUID()}`,
+          tiendas: []
+        }
+      });
+    }
+  });
+
+  revalidatePath("/admin/usuarios");
+  ok("/admin/usuarios", "Usuario creado.");
 }
 
 export async function logoutAction() {
@@ -226,7 +334,7 @@ export async function createOrderAction(formData: FormData) {
     const cliente = await tx.cliente.create({
       data: {
         nombre: parsed.data.clienteNombre,
-        email: parsed.data.clienteEmail,
+        email: parsed.data.clienteEmail.toLowerCase(),
         telefono: parsed.data.clienteTelefono,
         ciudad: parsed.data.clienteCiudad,
         direccion: parsed.data.clienteDireccion
