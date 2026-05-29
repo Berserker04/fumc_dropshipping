@@ -1,0 +1,68 @@
+
+<div id="comp-dia"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#082e1e' : '#E1F5EE',
+    primaryBorderColor: dark ? '#0F6E56' : '#0F6E56',
+    secondaryColor: dark ? '#2a2438' : '#EEEDFE',
+    tertiaryColor: dark ? '#1c1a10' : '#FAEEDA',
+    clusterBkg: dark ? '#0a1f16' : '#f0faf5',
+    clusterBorder: dark ? '#1D9E75' : '#1D9E75',
+  },
+});
+const diagram = `graph TB
+  subgraph CLIENTE["Capa de presentación (Next.js App Router)"]
+    UI_PUB["Sitio público y catálogo"]
+    UI_ADMIN["Dashboard administrador"]
+    UI_BODEGA["Panel operador bodega"]
+    UI_VENDOR["Portal vendedor externo"]
+    UI_CLIENTE["Vista seguimiento cliente"]
+  end
+
+  subgraph BACKEND["Capa de aplicación (Route Handlers / Server Actions)"]
+    AUTH["Módulo autenticación\\n(JWT + 2FA)"]
+    INV["Módulo inventario"]
+    PEDIDOS["Módulo pedidos"]
+    FACT["Módulo facturación"]
+    LOGIS["Módulo logística"]
+    REPORT["Módulo reportes y KPIs"]
+    NOTIF["Módulo notificaciones"]
+  end
+
+  subgraph INTEGRACIONES["Integraciones externas"]
+    EMAIL["SendGrid\\n(correo transaccional)"]
+    STORAGE["Cloudinary / S3\\n(imágenes productos)"]
+    TRANSP["APIs transportadoras"]
+    ECOMM["Shopify / WooCommerce\\n(webhooks)"]
+    WHATSAPP["WhatsApp Business API\\n(fase 2)"]
+  end
+
+  subgraph DATOS["Capa de datos"]
+    ORM["Prisma ORM + Zod"]
+    DB[("PostgreSQL")]
+  end
+
+  CLIENTE --> BACKEND
+  BACKEND --> DATOS
+  BACKEND --> INTEGRACIONES
+  NOTIF --> EMAIL
+  NOTIF --> WHATSAPP
+  INV --> STORAGE
+  LOGIS --> TRANSP
+  PEDIDOS --> ECOMM
+`;
+const { svg } = await mermaid.render('comp-svg', diagram);
+document.getElementById('comp-dia').innerHTML = svg;
+</script>

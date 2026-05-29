@@ -1,0 +1,65 @@
+
+<div id="seq-dia"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#082e1e' : '#E1F5EE',
+    primaryBorderColor: dark ? '#1D9E75' : '#0F6E56',
+    secondaryColor: dark ? '#2a2438' : '#EEEDFE',
+    activationBkgColor: dark ? '#1a2e20' : '#d4f0e3',
+    activationBorderColor: dark ? '#1D9E75' : '#0F6E56',
+    sequenceNumberColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+const diagram = `sequenceDiagram
+  autonumber
+  actor V as Vendedor externo
+  participant SIS as Sistema FUMC
+  participant INV as Módulo inventario
+  participant FACT as Módulo facturación
+  participant LOGIS as Módulo logística
+  participant NOTIF as Módulo notificaciones
+  actor BOD as Operador bodega
+
+  V->>SIS: Enviar pedido (productos + datos cliente)
+  SIS->>INV: Verificar disponibilidad de stock
+  INV-->>SIS: Stock disponible confirmado
+
+  alt Stock disponible
+    SIS->>INV: Descontar stock automáticamente
+    SIS->>FACT: Generar factura / documento equivalente
+    FACT-->>SIS: Factura generada (ID)
+    SIS->>LOGIS: Crear orden de despacho (estado: pendiente)
+    LOGIS-->>SIS: Orden de despacho creada
+    SIS->>NOTIF: Notificar confirmación al vendedor
+    NOTIF-->>V: Email/WhatsApp — Pedido confirmado
+    SIS-->>V: Respuesta: pedido aceptado + número de guía estimado
+  else Stock insuficiente
+    SIS-->>V: Sugerir pedido especial / preventa
+    V->>SIS: Confirmar pedido especial
+    SIS->>NOTIF: Notificar tiempo estimado al vendedor
+    NOTIF-->>V: Fecha estimada de disponibilidad
+  end
+
+  BOD->>SIS: Actualizar estado → en preparación
+  SIS->>LOGIS: Avanzar estado orden
+  BOD->>SIS: Actualizar estado → despachado + número guía real
+  SIS->>NOTIF: Notificar despacho
+  NOTIF-->>V: Email — Pedido despachado
+  SIS->>FACT: Calcular liquidación vendedor
+  FACT-->>V: Liquidación disponible en portal
+`;
+const { svg } = await mermaid.render('seq-svg', diagram);
+document.getElementById('seq-dia').innerHTML = svg;
+</script>

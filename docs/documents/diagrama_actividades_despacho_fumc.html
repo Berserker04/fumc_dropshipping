@@ -1,0 +1,62 @@
+
+<div id="act-dia"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#082e1e' : '#E1F5EE',
+    primaryBorderColor: dark ? '#1D9E75' : '#0F6E56',
+    secondaryColor: dark ? '#2a2438' : '#EEEDFE',
+    tertiaryColor: dark ? '#1c1a10' : '#FAEEDA',
+  },
+});
+const diagram = `flowchart TD
+  START([Pedido confirmado]) --> A1[Asignar operador de bodega]
+  A1 --> A2[Revisar lista de productos del pedido]
+  A2 --> A3{¿Todos los productos\\ndisponibles en bodega?}
+
+  A3 -- No --> A4[Crear pedido especial\\npor faltante]
+  A4 --> A5[Notificar al vendedor\\ntiempo estimado]
+  A5 --> A6[Esperar reabastecimiento]
+  A6 --> A3
+
+  A3 -- Sí --> A7[Preparar y empacar productos]
+  A7 --> A8[Seleccionar transportadora]
+  A8 --> A9[Generar etiqueta de envío]
+  A9 --> A10[Imprimir etiqueta y asignar guía]
+
+  A10 --> FORK{ }
+  FORK --> B1[Registrar salida en inventario]
+  FORK --> B2[Actualizar estado orden → Despachado]
+
+  B1 --> JOIN{ }
+  B2 --> JOIN
+
+  JOIN --> A11[Registrar número de guía real]
+  A11 --> A12[Notificar despacho\\na vendedor y cliente]
+  A12 --> A13{¿Entrega exitosa?}
+
+  A13 -- Sí --> A14[Confirmar entrega en sistema]
+  A14 --> A15[Calcular liquidación del vendedor]
+  A15 --> END([Proceso completado])
+
+  A13 -- No, devolución --> A16[Registrar devolución]
+  A16 --> A17[Actualizar inventario\\npor devolución]
+  A17 --> A18{¿Reintentar despacho?}
+  A18 -- Sí --> A1
+  A18 -- No --> A19[Registrar devolución final]
+  A19 --> END
+`;
+const { svg } = await mermaid.render('act-svg', diagram);
+document.getElementById('act-dia').innerHTML = svg;
+</script>

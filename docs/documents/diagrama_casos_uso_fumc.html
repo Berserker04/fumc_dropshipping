@@ -1,0 +1,83 @@
+
+<div id="uc-dia"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#2a2438' : '#EEEDFE',
+    primaryBorderColor: dark ? '#534AB7' : '#7F77DD',
+    secondaryColor: dark ? '#082e1e' : '#E1F5EE',
+    actorBkg: dark ? '#2a2438' : '#EEEDFE',
+    actorBorder: dark ? '#7F77DD' : '#534AB7',
+  },
+});
+const diagram = `flowchart LR
+  ADMIN(["Administrador"])
+  BODEGA(["Operador bodega"])
+  VENDOR(["Vendedor externo"])
+  CLIENTE_F(["Cliente final"])
+  SISTEMA(["Sistema externo\\n(e-commerce)"])
+
+  subgraph UC_ADMIN["Casos de uso — Administrador"]
+    UC1["Gestionar productos"]
+    UC2["Gestionar proveedores"]
+    UC3["Gestionar usuarios y roles"]
+    UC4["Consultar reportes y KPIs"]
+    UC5["Configurar parámetros del sistema"]
+    UC6["Gestionar inventario"]
+  end
+
+  subgraph UC_BODEGA["Casos de uso — Operador bodega"]
+    UC7["Registrar entrada de stock"]
+    UC8["Confirmar despacho"]
+    UC9["Actualizar estado logístico"]
+    UC10["Generar etiqueta de envío"]
+  end
+
+  subgraph UC_VENDOR["Casos de uso — Vendedor externo"]
+    UC11["Explorar catálogo disponible"]
+    UC12["Crear pedido"]
+    UC13["Consultar liquidaciones"]
+    UC14["Integrar tienda online"]
+    UC15["Crear pedido especial"]
+    UC16["Monitorear estado de pedidos"]
+  end
+
+  subgraph UC_CLIENTE["Casos de uso — Cliente final"]
+    UC17["Consultar estado de entrega"]
+    UC18["Recibir notificaciones"]
+  end
+
+  ADMIN --> UC1
+  ADMIN --> UC2
+  ADMIN --> UC3
+  ADMIN --> UC4
+  ADMIN --> UC5
+  ADMIN --> UC6
+  BODEGA --> UC7
+  BODEGA --> UC8
+  BODEGA --> UC9
+  BODEGA --> UC10
+  VENDOR --> UC11
+  VENDOR --> UC12
+  VENDOR --> UC13
+  VENDOR --> UC14
+  VENDOR --> UC15
+  VENDOR --> UC16
+  CLIENTE_F --> UC17
+  CLIENTE_F --> UC18
+  SISTEMA --> UC12
+`;
+const { svg } = await mermaid.render('uc-svg', diagram);
+document.getElementById('uc-dia').innerHTML = svg;
+</script>

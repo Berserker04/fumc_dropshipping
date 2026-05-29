@@ -1,0 +1,169 @@
+
+<div id="erd-clases"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#2a2438' : '#EEEDFE',
+    primaryBorderColor: dark ? '#534AB7' : '#534AB7',
+    secondaryColor: dark ? '#082e1e' : '#E1F5EE',
+    tertiaryColor: dark ? '#1c1a10' : '#FAEEDA',
+  },
+});
+const diagram = `classDiagram
+  class Usuario {
+    +String id
+    +String nombre
+    +String email
+    +String passwordHash
+    +RolUsuario rol
+    +Boolean activo
+    +DateTime creadoEn
+    +login() Boolean
+    +cerrarSesion() void
+    +restablecerContrasena() void
+    +tienePermiso(accion) Boolean
+  }
+
+  class Producto {
+    +String id
+    +String sku
+    +String nombre
+    +String descripcion
+    +Float precioCosto
+    +Float precioBase
+    +Int stockActual
+    +Int stockMinimo
+    +String proveedorId
+    +Boolean activo
+    +List imagenes
+    +crearProducto() Producto
+    +actualizarStock(cantidad) void
+    +estaDisponible() Boolean
+    +calcularMargen() Float
+  }
+
+  class Pedido {
+    +String id
+    +String vendedorId
+    +String clienteId
+    +EstadoPedido estado
+    +DateTime fechaCreacion
+    +Float totalBruto
+    +Float costoLogistico
+    +Float liquidacionVendedor
+    +List lineas
+    +confirmar() void
+    +cancelar() void
+    +calcularLiquidacion() Float
+    +generarFactura() Factura
+  }
+
+  class LineaPedido {
+    +String id
+    +String pedidoId
+    +String productoId
+    +Int cantidad
+    +Float precioUnitario
+    +Float subtotal
+    +calcularSubtotal() Float
+  }
+
+  class Proveedor {
+    +String id
+    +String razonSocial
+    +String nit
+    +String ciudad
+    +String contacto
+    +String terminosPago
+    +List categorias
+    +registrar() Proveedor
+    +listarProductos() List
+    +historialOrdenes() List
+  }
+
+  class VendedorExterno {
+    +String id
+    +String userId
+    +String nombreEmpresa
+    +String ciudad
+    +String datosBancarios
+    +String tokenIntegracion
+    +List tiendas
+    +registrarTienda(url) void
+    +consultarLiquidaciones() List
+    +sincronizarCatalogo() void
+  }
+
+  class OrdenDespacho {
+    +String id
+    +String pedidoId
+    +String operadorId
+    +EstadoDespacho estado
+    +String transportadora
+    +String numeroGuia
+    +DateTime fechaDespacho
+    +avanzarEstado() void
+    +generarEtiqueta() PDF
+    +asignarTransportadora(nombre) void
+  }
+
+  class Factura {
+    +String id
+    +String pedidoId
+    +String vendedorId
+    +DateTime fechaEmision
+    +Float totalFacturado
+    +String documentoEquivalente
+    +emitir() void
+    +anular() void
+    +exportarPDF() Blob
+  }
+
+  class MovimientoInventario {
+    +String id
+    +String productoId
+    +TipoMovimiento tipo
+    +Int cantidad
+    +String referencia
+    +String usuarioId
+    +DateTime fecha
+    +registrar() void
+  }
+
+  class PedidoEspecial {
+    +String id
+    +String vendedorId
+    +String proveedorId
+    +DateTime fechaEstimada
+    +EstadoPedidoEsp estado
+    +String condicionesPago
+    +notificarVendedor() void
+    +convertirAPedido() Pedido
+  }
+
+  Usuario "1" --> "0..*" Pedido : crea
+  Usuario "1" --> "1" VendedorExterno : es
+  Pedido "1" *-- "1..*" LineaPedido : contiene
+  Pedido "1" --> "1" OrdenDespacho : genera
+  Pedido "1" --> "1" Factura : produce
+  LineaPedido "1..*" --> "1" Producto : referencia
+  Producto "1..*" --> "1" Proveedor : suministrado por
+  Producto "1" --> "0..*" MovimientoInventario : registra
+  VendedorExterno "1" --> "0..*" Pedido : solicita
+  VendedorExterno "1" --> "0..*" PedidoEspecial : solicita
+  PedidoEspecial "1" --> "1" Proveedor : vincula
+`;
+const { svg } = await mermaid.render('erd-clases-svg', diagram);
+document.getElementById('erd-clases').innerHTML = svg;
+</script>

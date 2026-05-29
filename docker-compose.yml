@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fumc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fumc
+      POSTGRES_USER: fumc
+      POSTGRES_PASSWORD: fumc
+    ports:
+      - "55432:5432"
+    volumes:
+      - fumc_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fumc -d fumc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  fumc_postgres_data:

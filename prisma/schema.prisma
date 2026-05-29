@@ -1,0 +1,296 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  ADMINISTRADOR
+  OPERADOR_BODEGA
+  VENDEDOR_EXTERNO
+  CLIENTE_FINAL
+}
+
+enum EstadoPedido {
+  RECIBIDO
+  PEDIDO_ESPECIAL
+  CONFIRMADO
+  EN_PREPARACION
+  EMPACADO
+  DESPACHADO
+  EN_TRANSITO
+  ENTREGADO
+  DEVUELTO
+  CANCELADO
+}
+
+enum EstadoDespacho {
+  PENDIENTE
+  EN_PREPARACION
+  EMPACADO
+  DESPACHADO
+  EN_TRANSITO
+  ENTREGADO
+  DEVUELTO
+}
+
+enum TipoMovimiento {
+  ENTRADA
+  SALIDA
+  AJUSTE
+  DEVOLUCION
+}
+
+enum EstadoPedidoEspecial {
+  SOLICITADO
+  EN_COMPRA
+  RECIBIDO
+  CONVERTIDO
+  CANCELADO
+}
+
+enum EstadoLiquidacion {
+  PENDIENTE
+  APROBADA
+  PAGADA
+  ANULADA
+}
+
+enum CanalNotificacion {
+  EMAIL
+  WHATSAPP
+  SISTEMA
+}
+
+enum EstadoNotificacion {
+  PENDIENTE
+  ENVIADA
+  FALLIDA
+}
+
+model Usuario {
+  id           String        @id @default(cuid())
+  nombre       String
+  email        String        @unique
+  passwordHash String
+  rol          RolUsuario
+  activo       Boolean       @default(true)
+  creadoEn     DateTime      @default(now())
+  actualizadoEn DateTime     @updatedAt
+
+  vendedor     VendedorExterno?
+  cliente      Cliente?
+  movimientos  MovimientoInventario[]
+  ordenes      OrdenDespacho[] @relation("OperadorOrdenes")
+}
+
+model Proveedor {
+  id           String     @id @default(cuid())
+  razonSocial  String
+  nit          String     @unique
+  ciudad       String
+  contacto     String
+  terminosPago String
+  categorias   String[]
+  creadoEn     DateTime   @default(now())
+  actualizadoEn DateTime  @updatedAt
+
+  productos        Producto[]
+  pedidosEspeciales PedidoEspecial[]
+}
+
+model Producto {
+  id              String    @id @default(cuid())
+  sku             String    @unique
+  nombre          String
+  descripcion     String
+  marca           String
+  categoria       String
+  precioCosto     Decimal   @db.Decimal(12, 2)
+  precioBase      Decimal   @db.Decimal(12, 2)
+  stockActual     Int
+  stockMinimo     Int
+  tiempoDespacho  String
+  activo          Boolean   @default(true)
+  imagenes        Json
+  proveedorId     String
+  creadoEn        DateTime  @default(now())
+  actualizadoEn   DateTime  @updatedAt
+
+  proveedor   Proveedor              @relation(fields: [proveedorId], references: [id])
+  lineas      LineaPedido[]
+  movimientos MovimientoInventario[]
+
+  @@index([nombre])
+  @@index([categoria])
+  @@index([marca])
+  @@index([stockActual])
+}
+
+model VendedorExterno {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  nombreEmpresa   String
+  ciudad          String
+  direccion       String
+  telefono        String
+  datosBancarios  String
+  tokenIntegracion String   @unique
+  tiendas         String[]
+  creadoEn        DateTime  @default(now())
+  actualizadoEn   DateTime  @updatedAt
+
+  usuario       Usuario         @relation(fields: [userId], references: [id])
+  pedidos       Pedido[]
+  liquidaciones Liquidacion[]
+  pedidosEspeciales PedidoEspecial[]
+}
+
+model Cliente {
+  id          String   @id @default(cuid())
+  userId      String?  @unique
+  nombre      String
+  email       String
+  telefono    String
+  ciudad      String
+  direccion   String
+  creadoEn    DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  usuario Usuario? @relation(fields: [userId], references: [id])
+  pedidos Pedido[]
+}
+
+model Pedido {
+  id                   String       @id @default(cuid())
+  vendedorId           String
+  clienteId            String
+  estado               EstadoPedido @default(RECIBIDO)
+  totalBruto           Decimal      @db.Decimal(12, 2)
+  costoBase            Decimal      @db.Decimal(12, 2)
+  costoLogistico       Decimal      @db.Decimal(12, 2)
+  liquidacionVendedor  Decimal      @db.Decimal(12, 2)
+  guiaEstimada         String?
+  creadoEn             DateTime     @default(now())
+  actualizadoEn        DateTime     @updatedAt
+
+  vendedor       VendedorExterno @relation(fields: [vendedorId], references: [id])
+  cliente        Cliente         @relation(fields: [clienteId], references: [id])
+  lineas         LineaPedido[]
+  ordenDespacho  OrdenDespacho?
+  factura        Factura?
+  pedidoEspecial PedidoEspecial?
+  liquidacion    Liquidacion?
+  notificaciones Notificacion[]
+
+  @@index([estado])
+  @@index([creadoEn])
+}
+
+model LineaPedido {
+  id             String   @id @default(cuid())
+  pedidoId       String
+  productoId     String
+  cantidad       Int
+  precioUnitario Decimal  @db.Decimal(12, 2)
+  costoUnitario  Decimal  @db.Decimal(12, 2)
+  subtotal       Decimal  @db.Decimal(12, 2)
+  costoSubtotal  Decimal  @db.Decimal(12, 2)
+
+  pedido   Pedido   @relation(fields: [pedidoId], references: [id])
+  producto Producto @relation(fields: [productoId], references: [id])
+}
+
+model OrdenDespacho {
+  id             String         @id @default(cuid())
+  pedidoId       String         @unique
+  operadorId     String?
+  estado         EstadoDespacho @default(PENDIENTE)
+  transportadora String
+  numeroGuia     String?
+  etiquetaUrl    String?
+  fechaDespacho  DateTime?
+  fechaEntrega   DateTime?
+  creadoEn       DateTime       @default(now())
+  actualizadoEn  DateTime       @updatedAt
+
+  pedido   Pedido   @relation(fields: [pedidoId], references: [id])
+  operador Usuario? @relation("OperadorOrdenes", fields: [operadorId], references: [id])
+}
+
+model Factura {
+  id                   String   @id @default(cuid())
+  pedidoId             String   @unique
+  vendedorId           String
+  fechaEmision         DateTime @default(now())
+  totalFacturado       Decimal  @db.Decimal(12, 2)
+  documentoEquivalente String
+  anulada              Boolean  @default(false)
+
+  pedido Pedido @relation(fields: [pedidoId], references: [id])
+}
+
+model MovimientoInventario {
+  id         String         @id @default(cuid())
+  productoId String
+  tipo       TipoMovimiento
+  cantidad   Int
+  referencia String
+  usuarioId  String?
+  fecha      DateTime       @default(now())
+
+  producto Producto @relation(fields: [productoId], references: [id])
+  usuario  Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([tipo])
+  @@index([fecha])
+}
+
+model PedidoEspecial {
+  id              String               @id @default(cuid())
+  pedidoId        String               @unique
+  vendedorId      String
+  proveedorId     String
+  fechaEstimada   DateTime
+  estado          EstadoPedidoEspecial @default(SOLICITADO)
+  condicionesPago String
+  creadoEn        DateTime             @default(now())
+  actualizadoEn   DateTime             @updatedAt
+
+  pedido    Pedido          @relation(fields: [pedidoId], references: [id])
+  vendedor  VendedorExterno @relation(fields: [vendedorId], references: [id])
+  proveedor Proveedor       @relation(fields: [proveedorId], references: [id])
+}
+
+model Liquidacion {
+  id             String            @id @default(cuid())
+  pedidoId       String            @unique
+  vendedorId     String
+  totalVenta     Decimal           @db.Decimal(12, 2)
+  costoBase      Decimal           @db.Decimal(12, 2)
+  costoLogistico Decimal           @db.Decimal(12, 2)
+  ganancia       Decimal           @db.Decimal(12, 2)
+  estado         EstadoLiquidacion @default(PENDIENTE)
+  creadoEn       DateTime          @default(now())
+  actualizadoEn  DateTime          @updatedAt
+
+  pedido   Pedido          @relation(fields: [pedidoId], references: [id])
+  vendedor VendedorExterno @relation(fields: [vendedorId], references: [id])
+}
+
+model Notificacion {
+  id          String              @id @default(cuid())
+  pedidoId    String?
+  canal       CanalNotificacion
+  destinatario String
+  asunto      String
+  mensaje     String
+  estado      EstadoNotificacion @default(PENDIENTE)
+  creadaEn    DateTime           @default(now())
+  enviadaEn   DateTime?
+
+  pedido Pedido? @relation(fields: [pedidoId], references: [id])
+}
