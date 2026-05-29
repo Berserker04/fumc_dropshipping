@@ -59,7 +59,7 @@ export default async function DespachosPage({
         </h1>
         <p className="max-w-3xl text-slate-600">
           Gestiona preparacion, empaque, despacho, transito, entrega y devolucion.
-          Cada cambio registra una notificacion mock para el cliente.
+          Cada cambio registra una notificacion para el seguimiento del cliente.
         </p>
       </section>
 
@@ -142,7 +142,8 @@ export default async function DespachosPage({
                           <Input
                             id={`carrier-${pedido.id}`}
                             name="transportadora"
-                            defaultValue={pedido.ordenDespacho?.transportadora ?? "Transportadora Demo"}
+                            defaultValue={pedido.ordenDespacho?.transportadora ?? ""}
+                            placeholder="Transportadora"
                           />
                         </Field>
                         <Field className="w-36">
@@ -159,7 +160,7 @@ export default async function DespachosPage({
                         </Button>
                       </form>
                     ) : (
-                      <span className="text-sm text-slate-500">Sin transiciones</span>
+                      <span className="text-sm text-slate-500">Sin cambios disponibles</span>
                     )}
                   </Td>
                 </tr>

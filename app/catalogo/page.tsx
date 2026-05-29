@@ -69,7 +69,7 @@ export default async function CatalogoPage({
             Catalogo disponible
           </p>
           <h1 className="text-3xl font-semibold tracking-normal text-ink">
-            Productos listos para dropshipping y fulfillment
+            Productos disponibles para venta y despacho
           </h1>
           <p className="max-w-3xl text-base leading-7 text-slate-600">
             Consulta disponibilidad, margen sugerido y tiempo estimado de
@@ -80,7 +80,7 @@ export default async function CatalogoPage({
           <p className="text-sm text-slate-300">Productos activos</p>
           <p className="mt-1 text-4xl font-semibold">{productos.length}</p>
           <p className="mt-3 text-sm text-slate-300">
-            Filtrados por disponibilidad, marca, categoria y texto libre.
+            Filtra por disponibilidad, marca, categoria o busqueda.
           </p>
         </Card>
       </section>
@@ -91,7 +91,7 @@ export default async function CatalogoPage({
             <SlidersHorizontal size={18} /> Filtros
           </CardTitle>
           <CardDescription>
-            Los filtros son server-side para mantener una fuente de verdad unica.
+            Encuentra productos por codigo, nombre, categoria, marca o disponibilidad.
           </CardDescription>
         </CardHeader>
         <form className="grid gap-4 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto]" method="get">
@@ -104,7 +104,7 @@ export default async function CatalogoPage({
                 id="q"
                 name="q"
                 defaultValue={q}
-                placeholder="SKU, nombre o descripcion"
+                placeholder="Codigo, nombre o descripcion"
               />
             </div>
           </Field>
@@ -154,7 +154,7 @@ export default async function CatalogoPage({
         <Card>
           <CardTitle>No hay productos con estos filtros</CardTitle>
           <CardDescription className="mt-2">
-            Ajusta la busqueda o registra productos desde el modulo de inventario.
+            Ajusta la busqueda o agrega productos desde inventario.
           </CardDescription>
         </Card>
       ) : (

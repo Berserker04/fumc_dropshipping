@@ -108,14 +108,14 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <section className="flex flex-col gap-2">
         <p className="text-sm font-semibold uppercase tracking-wide text-mint">
-          Panel multirol
+          Panel principal
         </p>
         <h1 className="text-3xl font-semibold tracking-normal text-ink">
           Hola, {session.nombre}
         </h1>
         <p className="max-w-3xl text-slate-600">
           Este tablero resume pedidos, inventario, despacho y alertas para tomar
-          decisiones operativas sin salir del flujo del MVP.
+          decisiones operativas sin salir del flujo de trabajo.
         </p>
       </section>
 
@@ -207,9 +207,9 @@ export default async function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Notificaciones mock</CardTitle>
+              <CardTitle>Notificaciones</CardTitle>
               <CardDescription>
-                Registro local de eventos que luego podran salir por email o WhatsApp.
+                Registro de eventos importantes para el seguimiento operativo.
               </CardDescription>
             </CardHeader>
             <div className="space-y-3">

@@ -285,7 +285,7 @@ export async function createOrderAction(formData: FormData) {
         data: {
           pedidoId: pedido.id,
           estado: "PENDIENTE",
-          transportadora: "Transportadora Demo",
+          transportadora: "Sin asignar",
           numeroGuia: tracking,
           etiquetaUrl: generateMockLabel(tracking)
         }

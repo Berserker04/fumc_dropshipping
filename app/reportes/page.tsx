@@ -75,11 +75,11 @@ export default async function ReportesPage() {
           Reportes
         </p>
         <h1 className="text-3xl font-semibold tracking-normal text-ink">
-          KPIs ejecutivos del MVP
+          Indicadores ejecutivos
         </h1>
         <p className="max-w-3xl text-slate-600">
           Vista inicial para ventas, inventario, despacho y liquidaciones.
-          Los datos se calculan directamente desde PostgreSQL.
+          La informacion se actualiza con los registros del sistema.
         </p>
       </section>
 

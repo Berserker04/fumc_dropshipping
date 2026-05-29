@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 
 const navByRole: Record<AppRole, { href: string; label: string; icon: React.ReactNode }[]> = {
   ADMINISTRADOR: [
-    { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+    { href: "/dashboard", label: "Panel", icon: <LayoutDashboard size={18} /> },
     { href: "/catalogo", label: "Catalogo", icon: <PackageSearch size={18} /> },
     { href: "/admin/productos", label: "Inventario", icon: <Boxes size={18} /> },
     { href: "/bodega/despachos", label: "Despachos", icon: <Truck size={18} /> },
@@ -23,12 +23,12 @@ const navByRole: Record<AppRole, { href: string; label: string; icon: React.Reac
     { href: "/reportes", label: "Reportes", icon: <BarChart3 size={18} /> }
   ],
   OPERADOR_BODEGA: [
-    { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+    { href: "/dashboard", label: "Panel", icon: <LayoutDashboard size={18} /> },
     { href: "/catalogo", label: "Catalogo", icon: <PackageSearch size={18} /> },
     { href: "/bodega/despachos", label: "Despachos", icon: <Truck size={18} /> }
   ],
   VENDEDOR_EXTERNO: [
-    { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+    { href: "/dashboard", label: "Panel", icon: <LayoutDashboard size={18} /> },
     { href: "/catalogo", label: "Catalogo", icon: <PackageSearch size={18} /> },
     { href: "/vendedor/pedidos", label: "Pedidos", icon: <ClipboardList size={18} /> }
   ],

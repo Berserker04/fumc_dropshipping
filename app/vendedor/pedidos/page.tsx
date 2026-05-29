@@ -83,7 +83,7 @@ export default async function PedidosVendedorPage({
               <PackagePlus size={18} /> Nuevo pedido
             </CardTitle>
             <CardDescription>
-              Version MVP: una linea de producto por pedido.
+              Registra un producto por pedido.
             </CardDescription>
           </CardHeader>
           <form action={createOrderAction} className="space-y-4">
