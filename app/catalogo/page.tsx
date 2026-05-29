@@ -33,9 +33,9 @@ export default async function CatalogoPage({
         ...(q
           ? {
               OR: [
-                { nombre: { contains: q, mode: "insensitive" } },
-                { sku: { contains: q, mode: "insensitive" } },
-                { descripcion: { contains: q, mode: "insensitive" } }
+                { nombre: { contains: q } },
+                { sku: { contains: q } },
+                { descripcion: { contains: q } }
               ]
             }
           : {}),

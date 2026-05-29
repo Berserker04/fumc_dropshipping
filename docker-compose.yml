@@ -1,21 +1,22 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: fumc-postgres
+  mysql:
+    image: mysql:8.4
+    container_name: fumc-mysql
     restart: unless-stopped
     environment:
-      POSTGRES_DB: fumc
-      POSTGRES_USER: fumc
-      POSTGRES_PASSWORD: fumc
+      MYSQL_DATABASE: fumc
+      MYSQL_USER: fumc
+      MYSQL_PASSWORD: fumc
+      MYSQL_ROOT_PASSWORD: fumc-root
     ports:
-      - "55432:5432"
+      - "3307:3306"
     volumes:
-      - fumc_postgres_data:/var/lib/postgresql/data
+      - fumc_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fumc -d fumc"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u fumc --password=fumc"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  fumc_postgres_data:
+  fumc_mysql_data:

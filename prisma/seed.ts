@@ -103,9 +103,9 @@ async function main() {
     }
   });
 
-  const productos = await prisma.producto.createManyAndReturn({
-    data: [
-      {
+  const productos = await Promise.all([
+    prisma.producto.create({
+      data: {
         sku: "FUMC-HOG-001",
         nombre: "Organizador modular de cocina",
         descripcion: "Set apilable para despensa y cocina con material lavable.",
@@ -118,8 +118,10 @@ async function main() {
         tiempoDespacho: "24-48 horas",
         imagenes: ["https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=600&q=80"],
         proveedorId: proveedorHogar.id
-      },
-      {
+      }
+    }),
+    prisma.producto.create({
+      data: {
         sku: "FUMC-TEC-002",
         nombre: "Smartwatch deportivo",
         descripcion: "Reloj inteligente con monitoreo basico y bateria de larga duracion.",
@@ -132,8 +134,10 @@ async function main() {
         tiempoDespacho: "24 horas",
         imagenes: ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80"],
         proveedorId: proveedorTech.id
-      },
-      {
+      }
+    }),
+    prisma.producto.create({
+      data: {
         sku: "FUMC-ACC-003",
         nombre: "Mochila antirrobo urbana",
         descripcion: "Mochila resistente al agua con compartimento para portatil.",
@@ -146,8 +150,10 @@ async function main() {
         tiempoDespacho: "48 horas",
         imagenes: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80"],
         proveedorId: proveedorTech.id
-      },
-      {
+      }
+    }),
+    prisma.producto.create({
+      data: {
         sku: "FUMC-HOG-004",
         nombre: "Lampara LED recargable",
         descripcion: "Lampara de escritorio con tres tonos de luz y carga USB.",
@@ -161,8 +167,8 @@ async function main() {
         imagenes: ["https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=600&q=80"],
         proveedorId: proveedorHogar.id
       }
-    ]
-  });
+    })
+  ]);
 
   await prisma.movimientoInventario.createMany({
     data: productos.map((producto) => ({
